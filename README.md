@@ -1,6 +1,6 @@
 # 3D Length and Girth Comparator
 
-A single-file web app to compare 3D models side by side with bottoms aligned. Rotate, zoom, switch units, save your size, estimate likely biggest/smallest sizes from a partner count (order statistics), and export a labeled PNG. Runs 100% in the browser. No tracking.
+A web app to compare 3D penis-like models side by side. Rotate, zoom, switch units, save your size, estimate likely biggest/smallest sizes from a partner count, and export a labeled PNG. Runs 100% in the browser.
 
 https://bean141.github.io/size-comparator-3d/
 
@@ -109,7 +109,7 @@ You can also add a UI toggle to switch baselines.
 
 ## Privacy
 
-- 100% client-side. No analytics.
+- 100% client-side.
 - Only external fetch is the Three.js CDN.
 - "Save as my size" uses localStorage keys: `myLenIn`, `myGirIn`.
 
@@ -125,16 +125,6 @@ If your network blocks CDNs, vendor Three locally by downloading `three.min.js` 
 ```html
 <script src="./three.min.js"></script>
 ```
-
----
-
-## Troubleshooting
-
-- Blank page: open DevTools Console. If the CDN is blocked, vendor Three locally (see above).
-- GitHub Pages 404: Settings -> Pages must be "Deploy from a branch" with main and /(root). File must be `index.html` at repo root. Wait about a minute after enabling.
-- Blurry PNG: resize the browser window larger before clicking Snapshot (export uses the current canvas size).
-
----
 
 ## References
 
