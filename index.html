@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>3D Penis Length & Girth Comparator (Free) — Visualize, Compare, Export Labeled PNG</title>
+  <meta name="description" content="Free browser-based 3D penis size visualizer. Compare length and girth side-by-side, switch inches/cm, compute likely max/min from partner count (order statistics), and export a labeled PNG. 100% client-side." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://bean141.github.io/size-comparator-3d/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="3D Penis Length & Girth Comparator (Free) — Visualize, Compare, Export" />
+  <meta property="og:description" content="Compare length & girth in 3D, compute likely extremes from partner count, and export labeled PNG — all client-side." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://bean141.github.io/size-comparator-3d/" />
+  <meta property="og:image" content="https://bean141.github.io/size-comparator-3d/og-image.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="3D Penis Length & Girth Comparator (Free)" />
+  <meta name="twitter:description" content="3D size visualizer with inches/cm, likely max/min via order statistics, and labeled PNG export." />
+  <meta name="twitter:image" content="https://bean141.github.io/size-comparator-3d/og-image.png" />
+
+  <!-- Perf hints for CDN -->
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="dns-prefetch" href="https://unpkg.com" />
+
+  <style>
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{display:grid;grid-template-columns:400px 1fr;gap:16px;height:100%;padding:16px;box-sizing:border-box;background:#f8fafc;color:#0f172a}
+    .panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;overflow:auto}
+    .title{font-size:20px;font-weight:700;margin-bottom:8px}
+    .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#475569;margin-bottom:12px;align-items:center}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+    .chip{padding:2px 8px;border:1px solid #cbd5e1;border-radius:999px;background:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+    label{display:block;font-size:12px;color:#64748b;margin-bottom:4px}
+    input[type=number],select{width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box}
+    .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .checkbox{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+    .subtle{color:#64748b;font-size:12px}
+    .stats{display:grid;grid-template-columns:1fr;gap:12px;font-size:13px}
+    .statbox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px}
+    .statbox h4{margin:0 0 6px;font-size:12px;color:#475569}
+    .canvasbox{background:#fff;border:1px solid #e2e8f0;border-radius:16px;height:calc(100vh - 32px);display:grid;grid-template-rows:auto 1fr}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
+    .btn{padding:6px 10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:13px}
+    .btn:active{transform:translateY(1px)}
+    #viewport{width:100%;height:100%}
+    .hr{height:1px;background:#e2e8f0;margin:10px 0}
+    details summary{cursor:pointer;font-weight:600}
+  </style>
+
+  <!-- Keep Three.js loading exactly as before -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+  <!-- Structured data: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"SoftwareApplication",
+    "name":"3D Penis Length & Girth Comparator",
+    "applicationCategory":"EducationalApplication",
+    "operatingSystem":"Web",
+    "url":"https://bean141.github.io/size-comparator-3d/",
+    "description":"Free 3D penis size visualizer: compare length & girth, compute likely max/min from partner count with order statistics, export labeled PNG; all client-side.",
+    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+    "author":{"@type":"Person","name":"bean141"}
+  }
+  </script>
+
+  <!-- Structured data: FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {
+        "@type":"Question",
+        "name":"What does Max @ c% mean?",
+        "acceptedAnswer":{"@type":"Answer","text":"With c% confidence, the largest size seen among n partners was at most q_max, computed as q_max = F^{-1}(c^{1/n}) using a normal population model for length or girth."}
+      },
+      {
+        "@type":"Question",
+        "name":"What does Min @ c% mean?",
+        "acceptedAnswer":{"@type":"Answer","text":"With c% confidence, the smallest size seen among n partners was at most q_min (an upper bound), computed as q_min = F^{-1}(1 - (1 - c)^{1/n})."}
+      },
+      {
+        "@type":"Question",
+        "name":"Which data and distribution are used?",
+        "acceptedAnswer":{"@type":"Answer","text":"Defaults use Veale et al. (2015) means and standard deviations for erect length and circumference, modeling each dimension as approximately normal. Length and girth are treated independently in 'Both' mode for simplicity."}
+      },
+      {
+        "@type":"Question",
+        "name":"Can I export images?",
+        "acceptedAnswer":{"@type":"Answer","text":"Yes. Click Snapshot (PNG) to save a labeled image that includes each model’s length and girth in inches and centimeters."}
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <h1 class="title">3D Length & Girth Comparator</h1>
+    <div class="legend">
+      <div><span class="dot" style="background:#14b8a6"></span>A (you)</div>
+      <div><span class="dot" style="background:#6366f1"></span>B (max/manual)</div>
+      <div><span class="dot" style="background:#f59e0b"></span>C (min when partners on)</div>
+      <span class="chip">Bottoms aligned</span>
+      <span class="chip">Drag = rotate</span>
+      <span class="chip">Wheel/pinch = zoom</span>
+    </div>
+
+    <div class="inline" style="justify-content:space-between;">
+      <div class="inline">
+        <span class="subtle">Units:</span>
+        <label class="inline"><input type="radio" name="unit" id="unitIn" checked> in</label>
+        <label class="inline"><input type="radio" name="unit" id="unitCm"> cm</label>
+      </div>
+      <div class="inline">
+        <button class="btn" id="saveMySize">Save as my size</button>
+        <label class="inline"><input id="lockA" type="checkbox"> Lock A to saved</label>
+        <span class="subtle" id="savedNote"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div><label>Model A Length</label><input id="lenA" type="number" step="0.01" min="3" max="25"></div>
+      <div><label>Model A Girth</label><input id="girA" type="number" step="0.01" min="3" max="20"></div>
+    </div>
+
+    <div class="checkbox">
+      <input id="usePartners" type="checkbox">
+      <label for="usePartners">Use number of partners to set B (max) & C (min)</label>
+    </div>
+
+    <div id="partnersBlock" style="display:none;">
+      <div class="row">
+        <div><label>Partners (n)</label><input id="partners" type="number" min="1" step="1" value="30"></div>
+        <div><label>Confidence (%)</label><input id="confPct" type="number" min="50" max="99.9" step="0.1" value="90"></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Extremes based on</label>
+          <select id="extremeMode">
+            <option value="both" selected>Length & Girth (independent)</option>
+            <option value="length">Length only (keep B/C girth = A)</option>
+            <option value="girth">Girth only (keep B/C length = A)</option>
+          </select>
+        </div>
+        <div class="subtle" style="display:flex;align-items:center;">B = c-quantile of maximum; C = c-quantile of minimum</div>
+      </div>
+    </div>
+
+    <div id="manualBBlock">
+      <div class="row">
+        <div><label>Model B Length</label><input id="lenB" type="number" step="0.01" min="3" max="25" value="6.90"></div>
+        <div><label>Model B Girth</label><input id="girB" type="number" step="0.01" min="3" max="20" value="5.50"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:4px;">
+      <button class="btn" onclick="preset('yours_vs_55')">Yours vs 5.5″ girth</button>
+      <button class="btn" onclick="preset('quantile_30max')">30-partner 90% max/min</button>
+      <button class="btn" onclick="preset('thick_vs_long')">Thick vs Long</button>
+      <button class="btn" onclick="preset('yours_vs_6g')">Yours vs 6.0″ girth</button>
+    </div>
+
+    <div class="stats" style="margin-top:12px;">
+      <div class="statbox" id="statA"><h4>A</h4></div>
+      <div class="statbox" id="statB" style="display:none;"><h4>B</h4></div>
+      <div class="statbox" id="statC" style="display:none;"><h4>C</h4></div>
+    </div>
+
+    <div class="hr"></div>
+    <details>
+      <summary>Tips</summary>
+      <div class="subtle" style="margin-top:8px;">
+        • Use ↑/↓ keys for fine steps.<br>
+        • “Save as my size” stores A in your browser; “Lock A” freezes it while you tweak B/C.<br>
+        • Hide grid for clean screenshots; use the Snapshot button.<br>
+      </div>
+    </details>
+
+    <!-- How it works (SEO text, collapsed by default) -->
+    <details id="how-it-works" style="margin-top:8px;">
+      <summary>How it works (statistics in plain English)</summary>
+      <p>This visualizer compares 3D capsules built from length and circumference (girth). In “partners” mode it uses simple order statistics to estimate likely extremes for a group of size n at a chosen confidence c.</p>
+      <ul>
+        <li><strong>Max @ c%</strong>: with c% confidence, the largest in n draws is at most q<sub>max</sub> = Φ<sup>−1</sup>(c<sup>1/n</sup>) under a normal population model.</li>
+        <li><strong>Min @ c%</strong> (upper bound): with c% confidence, the smallest in n draws is at most q<sub>min</sub> = Φ<sup>−1</sup>(1 − (1 − c)<sup>1/n</sup>).</li>
+      </ul>
+      <p>Defaults use Veale et&nbsp;al. (2015) means/SDs for erect measures. Length and girth are treated independently in “Both” mode for clarity.</p>
+    </details>
+
+    <!-- FAQ (more crawlable text) -->
+    <details id="faq" style="margin-top:8px;">
+      <summary>FAQ</summary>
+      <p><strong>Data sources?</strong> Veale et&nbsp;al., BJU International (2015) provide commonly used nomograms and summary stats for erect measures. You can replace μ/σ in code if you prefer a different baseline.</p>
+      <p><strong>Why normal?</strong> It’s a reasonable approximation near the center, aligns with nomograms, and is fast in-browser.</p>
+      <p><strong>Correlation between length and girth?</strong> Not modeled; “Both” applies bounds independently to keep the UI simple.</p>
+      <p><strong>Uploads?</strong> None. Everything runs in your browser. “Save as my size” uses localStorage only.</p>
+    </details>
+
+    <div class="subtle" style="margin-top:8px;">Model: rounded capsules from length & circumference; real anatomy varies. Scale: 1 unit ≈ 1 cm.</div>
+  </div>
+
+  <div class="canvasbox">
+    <div class="toolbar">
+      <button class="btn" id="zoomOut">− Zoom</button>
+      <button class="btn" id="zoomIn">+ Zoom</button>
+      <button class="btn" id="zoomReset">Reset View</button>
+      <label class="inline"><input id="toggleGrid" type="checkbox" checked> Show grid</label>
+      <button class="btn" id="snapshot">Snapshot (PNG)</button>
+      <span class="subtle">(drag to rotate, wheel/pinch to zoom)</span>
+    </div>
+    <div id="viewport"></div>
+  </div>
+</div>
+
+<script>
+  // ===== math helpers =====
+  const IN_TO_CM = 2.54, TAU = Math.PI * 2;
+  const toCm = vIn => Math.max(0.01, vIn * IN_TO_CM);
+  const toIn = vCm => Math.max(0.01, vCm / IN_TO_CM);
+  const radiusFromGirthCm = g => Math.max(0.01, g / TAU);
+
+  // Inverse normal CDF (Acklam)
+  function invNorm(p){ if(p<=0||p>=1) return NaN;
+    const a1=-39.69683028665376,a2=220.9460984245205,a3=-275.9285104469687,a4=138.3577518672690,a5=-30.66479806614716,a6=2.506628277459239;
+    const b1=-54.47609879822406,b2=161.5858368580409,b3=-155.6989798598866,b4=66.80131188771972,b5=-13.28068155288572;
+    const c1=-0.007784894002430293,c2=-0.3223964580411365,c3=-2.400758277161838,c4=-2.549732539343734,c5=4.374664141464968,c6=2.938163982698783;
+    const d1=0.007784695709041462,d2=0.3224671290700398,d3=2.445134137142996,d4=3.754408661907416,plow=0.02425,phigh=1-plow; let q,r;
+    if(p<plow){ q=Math.sqrt(-2*Math.log(p)); return (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1);}
+    if(p>phigh){ q=Math.sqrt(-2*Math.log(1-p)); return -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/((((d1*q+d2)*q+d3)*q+d4)*q+1);}
+    q=p-0.5; r=q*q; return (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q/(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1);
+  }
+  // Veale-like params (cm)
+  const MU_LEN=13.12, SD_LEN=1.66, MU_GIR=11.66, SD_GIR=1.10;
+  const qMax = (mu,sd,n,c)=> mu + sd*invNorm(Math.pow(c,1/n));
+  const qMin = (mu,sd,n,c)=> mu + sd*invNorm(1 - Math.pow(1-c,1/n));
+
+  // ===== three.js scene =====
+  const container = document.getElementById('viewport');
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf0f5ff);
+  const camera = new THREE.PerspectiveCamera(35, 2, 0.1, 5000);
+  const renderer = new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(window.devicePixelRatio||1);
+  container.appendChild(renderer.domElement);
+
+  const grid = new THREE.GridHelper(600, 200, 0x94a3b8, 0xcbd5e1); grid.position.y = 0; scene.add(grid);
+  const group = new THREE.Group(); scene.add(group);
+
+  const COLOR_A='#14b8a6', COLOR_B='#6366f1', COLOR_C='#f59e0b';
+  const matA = new THREE.MeshStandardMaterial({color:0x14b8a6,roughness:0.5,metalness:0.1});
+  const matB = new THREE.MeshStandardMaterial({color:0x6366f1,roughness:0.5,metalness:0.1});
+  const matC = new THREE.MeshStandardMaterial({color:0xf59e0b,roughness:0.5,metalness:0.1});
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.9));
+  const key = new THREE.DirectionalLight(0xffffff,0.9); key.position.set(50,80,40); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff,0.35); fill.position.set(-40,20,-30); scene.add(fill);
+
+  let meshA=null, meshB=null, meshC=null, zoomFactor=1.0, unit='in';
+
+  function buildCapsule(lengthCm,girthCm,mat){
+    const r = radiusFromGirthCm(girthCm), straight = Math.max(0.01, lengthCm - 2*r);
+    const g = new THREE.CapsuleGeometry(r, straight, 32, 64);
+    const m = new THREE.Mesh(g, mat); m.position.y = (straight/2 + r); return {mesh:m};
+  }
+
+  // rotate/zoom
+  let isDown=false,lastX=0,rotY=0;
+  container.addEventListener('pointerdown',e=>{isDown=true;lastX=e.clientX;});
+  window.addEventListener('pointerup',()=>{isDown=false;});
+  window.addEventListener('pointermove',e=>{ if(!isDown) return; const dx=e.clientX-lastX; lastX=e.clientX; rotY+=dx*0.005; });
+  const ZMIN=0.5, ZMAX=3.0; const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  container.addEventListener('wheel',e=>{e.preventDefault(); const s=Math.pow(1.0015,e.deltaY); zoomFactor=clamp(zoomFactor*s,ZMIN,ZMAX); frameCamera(false); },{passive:false});
+  let pinchStart=0,pinchZoom=1; const d2=(t0,t1)=>Math.hypot(t0.clientX-t1.clientX,t0.clientY-t1.clientY);
+  container.addEventListener('touchstart',e=>{ if(e.touches.length===2){pinchStart=d2(e.touches[0],e.touches[1]); pinchZoom=zoomFactor;}},{passive:true});
+  container.addEventListener('touchmove',e=>{ if(e.touches.length===2&&pinchStart>0){ const d=d2(e.touches[0],e.touches[1]); zoomFactor=clamp(pinchZoom/(d/pinchStart),ZMIN,ZMAX); frameCamera(false);}},{passive:true});
+  container.addEventListener('touchend',()=>{pinchStart=0;},{passive:true});
+  document.getElementById('zoomIn').addEventListener('click',()=>{zoomFactor=clamp(zoomFactor*0.9,ZMIN,ZMAX);frameCamera(false);});
+  document.getElementById('zoomOut').addEventListener('click',()=>{zoomFactor=clamp(zoomFactor*1.1,ZMIN,ZMAX);frameCamera(false);});
+  document.getElementById('zoomReset').addEventListener('click',()=>{zoomFactor=1.0;frameCamera(true);});
+  document.getElementById('toggleGrid').addEventListener('change',e=>{grid.visible=e.target.checked;});
+
+  // ===== snapshot with labels =====
+  let lastStats = {A:null,B:null,C:null}; // filled in updateScene()
+  document.getElementById('snapshot').addEventListener('click',()=>{
+    renderer.render(scene,camera);
+    const src = renderer.domElement, w = src.width, h = src.height;
+    const out = document.createElement('canvas'); out.width = w; out.height = h;
+    const ctx = out.getContext('2d'); ctx.drawImage(src,0,0);
+
+    // Build legend lines
+    const lines = [];
+    const fmt = n => n.toFixed(2);
+    if(lastStats.A){ const s=lastStats.A; lines.push({color:COLOR_A, text:`A — ${fmt(s.lenIn)}\" × ${fmt(s.girIn)}\"  (${fmt(s.lenCm)} cm × ${fmt(s.girCm)} cm)`}); }
+    if(lastStats.B){ const s=lastStats.B; lines.push({color:COLOR_B, text:`B — ${fmt(s.lenIn)}\" × ${fmt(s.girIn)}\"  (${fmt(s.lenCm)} cm × ${fmt(s.girCm)} cm)`}); }
+    if(lastStats.C){ const s=lastStats.C; lines.push({color:COLOR_C, text:`C — ${fmt(s.lenIn)}\" × ${fmt(s.girIn)}\"  (${fmt(s.lenCm)} cm × ${fmt(s.girCm)} cm)`}); }
+
+    // Draw legend box (top-left)
+    ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+    let maxW = 0; lines.forEach(l=>{ maxW = Math.max(maxW, ctx.measureText(l.text).width); });
+    const pad = 12, lh = 22, dot = 12, x = 16, y = 16;
+    const boxW = Math.ceil(maxW + pad*3 + dot);
+    const boxH = Math.ceil(pad*2 + lh*lines.length);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x, y, boxW, boxH);
+    ctx.strokeStyle = 'rgba(100,116,139,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(x, y, boxW, boxH);
+    lines.forEach((l,i)=>{
+      const yy = y + pad + lh*i + 14;
+      ctx.fillStyle = l.color; ctx.fillRect(x+pad, yy-10, dot, dot);
+      ctx.fillStyle = '#0f172a'; ctx.fillText(l.text, x + pad + dot + 6, yy);
+    });
+
+    const a = document.createElement('a');
+    a.href = out.toDataURL('image/png');
+    a.download = 'size-compare-labeled.png';
+    a.click();
+  });
+
+  function animate(){ requestAnimationFrame(animate); group.rotation.y=rotY; renderer.render(scene,camera);}
+  function onResize(){ const w=container.clientWidth||container.offsetWidth, h=container.clientHeight||container.offsetHeight; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); frameCamera(true); }
+  window.addEventListener('resize',onResize);
+
+  // ===== UI =====
+  const $ = id => document.getElementById(id);
+  const lenAEl=$('lenA'), girAEl=$('girA'), lenBEl=$('lenB'), girBEl=$('girB');
+  const usePartners=$('usePartners'), partnersBlock=$('partnersBlock'), manualBBlock=$('manualBBlock');
+  const partnersEl=$('partners'), confPctEl=$('confPct'), extremeMode=$('extremeMode');
+  const lockA=$('lockA'), saveBtn=$('saveMySize'), savedNote=$('savedNote');
+  const unitIn=$('unitIn'), unitCm=$('unitCm');
+  const LS_LEN='myLenIn', LS_GIR='myGirIn';
+
+  function loadSavedSize(){
+    const len=parseFloat(localStorage.getItem(LS_LEN)), gir=parseFloat(localStorage.getItem(LS_GIR));
+    const has=Number.isFinite(len)&&Number.isFinite(gir);
+    lenAEl.value=(unit==='cm'?(has?len*IN_TO_CM:6*IN_TO_CM):(has?len:6)).toFixed(2);
+    girAEl.value=(unit==='cm'?(has?gir*IN_TO_CM:4.33*IN_TO_CM):(has?gir:4.33)).toFixed(2);
+    savedNote.textContent = has ? `Saved: ${len.toFixed(2)}\" × ${gir.toFixed(2)}\"` : '(no saved size yet)';
+  }
+
+  saveBtn.addEventListener('click',()=> {
+    const l = unit==='cm'? toIn(parseFloat(lenAEl.value||'6')) : parseFloat(lenAEl.value||'6');
+    const g = unit==='cm'? toIn(parseFloat(girAEl.value||'4.33')): parseFloat(girAEl.value||'4.33');
+    if(Number.isFinite(l)&&Number.isFinite(g)){ localStorage.setItem(LS_LEN,String(l)); localStorage.setItem(LS_GIR,String(g)); savedNote.textContent=`Saved: ${l.toFixed(2)}\" × ${g.toFixed(2)}\"`; }
+  });
+
+  function applyLockA(){
+    if(lockA.checked){
+      const l=parseFloat(localStorage.getItem(LS_LEN)), g=parseFloat(localStorage.getItem(LS_GIR));
+      if(Number.isFinite(l)&&Number.isFinite(g)){ lenAEl.value=(unit==='cm'?l*IN_TO_CM:l).toFixed(2); girAEl.value=(unit==='cm'?g*IN_TO_CM:g).toFixed(2); }
+      lenAEl.disabled=true; girAEl.disabled=true;
+    } else { lenAEl.disabled=false; girAEl.disabled=false; }
+    updateScene(false);
+  }
+  lockA.addEventListener('change',applyLockA);
+
+  function togglePartnersUI(){
+    partnersBlock.style.display = usePartners.checked ? '' : 'none';
+    manualBBlock.style.display   = usePartners.checked ? 'none' : '';
+    updateScene(true);
+  }
+  usePartners.addEventListener('change',togglePartnersUI);
+
+  unitIn.addEventListener('change',()=>{ if(unitIn.checked){ switchUnit('in'); }});
+  unitCm.addEventListener('change',()=>{ if(unitCm.checked){ switchUnit('cm'); }});
+  function switchUnit(next){
+    if(unit===next) return;
+    const conv = next==='cm'? (v=>v*IN_TO_CM) : (v=>v/IN_TO_CM);
+    [lenAEl,girAEl,lenBEl,girBEl].forEach(el=>{ const v=parseFloat(el.value||'0'); el.value = isNaN(v)?'':conv(v).toFixed(2); });
+    unit=next; loadSavedSize(); updateScene(true);
+  }
+
+  ['lenA','girA','lenB','girB','partners','confPct','extremeMode'].forEach(id=>$(id).addEventListener('input',()=>updateScene(false)));
+
+  window.preset = which=>{
+    if(which==='yours_vs_55'){ usePartners.checked=false; togglePartnersUI(); lockA.checked=true; applyLockA();
+      lenBEl.value = (unit==='cm'? (6.00*IN_TO_CM).toFixed(2) : '6.00');
+      girBEl.value = (unit==='cm'? (5.50*IN_TO_CM).toFixed(2) : '5.50');
+    } else if(which==='quantile_30max'){ usePartners.checked=true; togglePartnersUI(); partnersEl.value='30'; confPctEl.value='90'; extremeMode.value='both'; lockA.checked=true; applyLockA();
+    } else if(which==='thick_vs_long'){ usePartners.checked=false; togglePartnersUI(); lockA.checked=true; applyLockA();
+      lenBEl.value = (unit==='cm'? (7.00*IN_TO_CM).toFixed(2) : '7.00');
+      girBEl.value = (unit==='cm'? (4.70*IN_TO_CM).toFixed(2) : '4.70');
+    } else if(which==='yours_vs_6g'){ usePartners.checked=false; togglePartnersUI(); lockA.checked=true; applyLockA();
+      lenBEl.value = (unit==='cm'? (6.50*IN_TO_CM).toFixed(2) : '6.50');
+      girBEl.value = (unit==='cm'? (6.00*IN_TO_CM).toFixed(2) : '6.00');
+    }
+    updateScene(true);
+  };
+
+  function statHtml(tag,lenIn,lenCm,girIn,girCm,rCm){
+    const in2=2.54*2.54, in3=in2*2.54, area=Math.PI*rCm*rCm, vol=area*lenCm, rIn=rCm/2.54;
+    return `<h4>${tag}</h4>
+      Length: ${lenIn.toFixed(2)} in (${lenCm.toFixed(2)} cm)<br>
+      Girth: ${girIn.toFixed(2)} in (${girCm.toFixed(2)} cm)<br>
+      Radius: ${rIn.toFixed(2)} in (${rCm.toFixed(2)} cm)<br>
+      Area: ${(area/in2).toFixed(2)} in² (${area.toFixed(2)} cm²)<br>
+      Volume: ${(vol/in3).toFixed(2)} in³ (${vol.toFixed(2)} cm³)`;
+  }
+
+  function frameCamera(forceCenter){
+    const box=new THREE.Box3().setFromObject(group);
+    if(!isFinite(box.min.x)||!isFinite(box.max.x)) return;
+    const size=new THREE.Vector3(); box.getSize(size);
+    const targetY=Math.max(0.1, size.y*0.5);
+    const fov=camera.fov*Math.PI/180, aspect=camera.aspect||1, pad=1.2;
+    const height=Math.max(10,size.y*pad), width=Math.max(10,size.x*pad);
+    const distV=(height/2)/Math.tan(fov/2);
+    const hfov=2*Math.atan(Math.tan(fov/2)*aspect);
+    const distH=(width/2)/Math.tan(hfov/2);
+    const baseDist=Math.max(distV,distH)+size.z;
+    const dist=baseDist*(forceCenter?1.0:zoomFactor);
+    camera.position.set(0,targetY,dist);
+    camera.lookAt(0,targetY,0);
+    camera.near=Math.max(0.1,dist*0.01); camera.far=Math.max(1000,dist*10);
+    camera.updateProjectionMatrix();
+  }
+
+  function readNum(el){ const v=parseFloat(el.value||'0'); return isNaN(v)?0:v; }
+
+  function updateScene(forceCenter){
+    [meshA,meshB,meshC].forEach(m=>{ if(m){ group.remove(m); if(m.geometry) m.geometry.dispose(); }});
+    meshA=meshB=meshC=null;
+
+    // A
+    const lenAin = unit==='cm'? toIn(readNum(lenAEl)) : readNum(lenAEl);
+    const girAin = unit==='cm'? toIn(readNum(girAEl)) : readNum(girAEl);
+    const AlenCm=toCm(lenAin), AgirCm=toCm(girAin);
+    meshA = buildCapsule(AlenCm,AgirCm,matA).mesh; group.add(meshA);
+
+    const partners=Math.max(1,Math.floor(readNum(partnersEl)||1));
+    const cPct=Math.max(50,Math.min(99.9,readNum(confPctEl)||90))/100;
+    const mode=extremeMode.value;
+
+    let B_lenCm=0,B_girCm=0,C_lenCm=0,C_girCm=0,B_on=false,C_on=false;
+
+    if(usePartners.checked){
+      const Lmax=qMax(MU_LEN,SD_LEN,partners,cPct), Gmax=qMax(MU_GIR,SD_GIR,partners,cPct);
+      const Lmin=qMin(MU_LEN,SD_LEN,partners,cPct), Gmin=qMin(MU_GIR,SD_GIR,partners,cPct);
+      if(mode==='both'){ B_lenCm=Lmax; B_girCm=Gmax; C_lenCm=Lmin; C_girCm=Gmin; }
+      else if(mode==='length'){ B_lenCm=Lmax; C_lenCm=Lmin; B_girCm=AgirCm; C_girCm=AgirCm; }
+      else { B_girCm=Gmax; C_girCm=Gmin; B_lenCm=AlenCm; C_lenCm=AlenCm; }
+      meshB=buildCapsule(Math.max(0.5,B_lenCm),Math.max(0.5,B_girCm),matB).mesh;
+      meshC=buildCapsule(Math.max(0.5,C_lenCm),Math.max(0.5,C_girCm),matC).mesh;
+      group.add(meshB); group.add(meshC); B_on=C_on=true;
+    } else {
+      const lenBin = unit==='cm'? toIn(readNum(lenBEl)) : readNum(lenBEl);
+      const girBin = unit==='cm'? toIn(readNum(girBEl)) : readNum(girBEl);
+      B_lenCm=toCm(lenBin); B_girCm=toCm(girBin);
+      meshB=buildCapsule(B_lenCm,B_girCm,matB).mesh; group.add(meshB); B_on=true;
+    }
+
+    // spacing
+    const rA=radiusFromGirthCm(AgirCm), rB=B_on?radiusFromGirthCm(B_girCm):0.01, rC=C_on?radiusFromGirthCm(C_girCm):0.01;
+    const gap=Math.max(2*Math.max(rA,rB,rC)+2,4);
+    [meshA,meshB,meshC].filter(Boolean).forEach((m,i,arr)=>{ m.position.x=(i-(arr.length-1)/2)*gap; });
+
+    // stats panels
+    const statA=document.getElementById('statA'), statB=document.getElementById('statB'), statC=document.getElementById('statC');
+    statA.innerHTML = statHtml('A', lenAin, AlenCm, girAin, AgirCm, rA);
+    if(B_on){ statB.style.display=''; statB.innerHTML = statHtml(usePartners.checked?`B (max @ ${Math.round(cPct*100)}%)`:'B', toIn(B_lenCm), B_lenCm, toIn(B_girCm), B_girCm, rB); }
+    else { statB.style.display='none'; }
+    if(C_on){ statC.style.display=''; statC.innerHTML = statHtml(`C (min @ ${Math.round(cPct*100)}%)`, toIn(C_lenCm), C_lenCm, toIn(C_girCm), C_girCm, rC); }
+    else { statC.style.display='none'; }
+
+    // fill lastStats for labeled PNG
+    lastStats.A = {lenIn: lenAin, girIn: girAin, lenCm: AlenCm, girCm: AgirCm};
+    lastStats.B = B_on ? {lenIn: toIn(B_lenCm), girIn: toIn(B_girCm), lenCm: B_lenCm, girCm: B_girCm} : null;
+    lastStats.C = C_on ? {lenIn: toIn(C_lenCm), girIn: toIn(C_girCm), lenCm: C_lenCm, girCm: C_girCm} : null;
+
+    frameCamera(forceCenter);
+  }
+
+  (function init(){
+    unit='in'; document.getElementById('unitIn').checked=true;
+    loadSavedSize();
+    document.getElementById('lockA').checked=false; applyLockA();
+    document.getElementById('usePartners').checked=false; togglePartnersUI();
+    const w=container.clientWidth||container.offsetWidth, h=container.clientHeight||container.offsetHeight;
+    renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
+    updateScene(true); frameCamera(true); animate();
+  })();
+</script>
+</body>
+</html>
