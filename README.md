@@ -2,6 +2,8 @@
 
 A single-file web app to compare 3D models side by side with bottoms aligned. Rotate, zoom, switch units, save your size, estimate likely biggest/smallest sizes from a partner count (order statistics), and export a labeled PNG. Runs 100% in the browser. No tracking.
 
+https://bean141.github.io/size-comparator-3d/
+
 ---
 
 ## Features
