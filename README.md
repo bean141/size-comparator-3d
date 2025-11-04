@@ -30,9 +30,6 @@ We use global erect measurements reported by Veale et al. (2015, BJU Internation
 - Erect length (cm): mean mu_L = 13.12, SD sigma_L = 1.66
 - Erect circumference / girth (cm): mean mu_G = 11.66, SD sigma_G = 1.10
 
-For context only, an India-specific clinic sample (Promodu et al., 2007; Int J Impot Res, n=93) reported:
-- Erect length ~ 13.01 cm, erect circumference ~ 11.46 cm
-
 These are close to the global means, although sampling, geography, and methods differ.
 
 ### Distributional assumption
@@ -86,7 +83,7 @@ Open `index.html` and locate these constants (values are centimeters):
 const MU_LEN = 13.12, SD_LEN = 1.66;  // erect length
 const MU_GIR = 11.66, SD_GIR = 1.10;  // erect circumference (girth)
 ```
-To use the India sample means as a rough baseline:
+To use the country specific sample means as a rough baseline:
 ```js
 const MU_LEN = 13.01;  // keep SD unless you have robust local SD
 const SD_LEN = 1.66;
@@ -131,9 +128,6 @@ If your network blocks CDNs, vendor Three locally by downloading `three.min.js` 
 Veale D. et al. (2015). "Am I normal? A systematic review and construction of nomograms for flaccid and erect penis length and circumference...". BJU International.
 PubMed: https://pubmed.ncbi.nlm.nih.gov/25487360/
 PDF: https://drjromero-otero.com/wp-content/uploads/2018/08/Veale_et_al-2015-BJU_International.pdf
-
-Promodu K. et al. (2007). "Penile length and circumference: an Indian study". International Journal of Impotence Research.
-PubMed: https://pubmed.ncbi.nlm.nih.gov/17568760/
 
 Belladelli F. et al. (2023). "Worldwide Temporal Trends in Penile Length". World Journal of Men's Health.
 PDF: https://wjmh.org/pdf/10.5534/wjmh.220203
