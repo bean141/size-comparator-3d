@@ -19,27 +19,6 @@ A single-file web app to compare 3D models side by side with bottoms aligned. Ro
 
 ---
 
-## Quick Start
-
-### Open locally
-1) Download or clone this repo.
-2) Open `index.html` in Chrome/Firefox/Edge.
-   - If your browser blocks local modules, run a tiny server:
-     ```bash
-     python3 -m http.server 8080
-     # then open http://localhost:8080/
-     ```
-
-### Free hosting (GitHub Pages)
-1) Repo Settings -> Pages.
-2) Source: "Deploy from a branch".
-3) Branch: `main`, Folder: `/ (root)`, then Save.
-4) Your site: `https://<your-username>.github.io/size-comparator-3d/`
-
-Netlify Drop, Vercel, and Cloudflare Pages also work with no build step.
-
----
-
 ## Statistics and Methods (what the app is doing)
 
 This tool is an illustrative visualizer based on simple, transparent assumptions. It does not predict individuals.
