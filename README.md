@@ -38,7 +38,21 @@ These are close to the global means, although sampling, geography, and methods d
 ### Distributional assumption
 Following Veale's nomogram approach, we model erect length and girth separately as approximately normal in the general population. The app treats length and girth as independent when "Both" is selected. This keeps the math and UI simple; it is a useful approximation near the center of the distribution.
 
-### Order statistics (max/min at confidence c)
+### Number of partners
+
+If someone has been with n partners, the biggest and smallest sizes they’ve encountered won’t sit at the population average; they’ll drift toward the tails just because you sampled multiple people. You want a principled, non-anecdotal way to turn “n partners” into plausible extremes to compare against.
+
+Why use order statistics?
+
+Order statistics are the math for “the biggest of n” and “the smallest of n.”
+They let us answer questions like:
+
+Max bound (B): “With c% confidence, the largest she’s seen is ≤ q_max.”
+
+Min bound (C): “With c% confidence, the smallest she’s seen is ≤ q_min.” (an upper bound on the minimum—see alt below)
+
+This converts “how many partners?” into realistic ceilings/floors instead of guesswork.
+
 Given n partners and a confidence level c in (0,1), the app estimates a size q so that:
 - Max case (B): P(max <= q_max) = c
 - Min case (C): P(min >= q_min) = c
