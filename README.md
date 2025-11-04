@@ -1,118 +1,163 @@
-# 3D Length & Girth Comparator
+# 3D Length and Girth Comparator
 
-Compare 3D models side‑by‑side with bottoms aligned. Rotate, zoom, switch units, save your size, compute likely max/min from a partner count, and export a **labeled PNG**. Runs 100% in the browser (no backend).
+A single-file web app to compare 3D models side by side with bottoms aligned. Rotate, zoom, switch units, save your size, estimate likely biggest/smallest sizes from a partner count (order statistics), and export a labeled PNG. Runs 100% in the browser. No tracking.
 
 ---
 
 ## Features
 
-- **A/B/C comparison**
-  - **A (you)** — can be saved to `localStorage` and locked.
-  - **B** — manual values *or* auto **max @ c%** from partner count.
-  - **C** — auto **min @ c%** from partner count.
-- **Bottoms aligned** for accurate length comparison.
-- **Units**: inches ↔︎ centimeters (inputs convert both ways).
-- **Snapshot (PNG)** with a **legend showing length × girth (in & cm)**.
-- **Grid toggle**, **Reset view**, smooth drag‑rotate and wheel/pinch zoom.
-- Single HTML file using Three.js via CDN.
+- A/B/C comparison
+  - A (you): can be saved to browser localStorage and locked
+  - B: manual size or computed max at confidence c from partners n
+  - C: computed min at confidence c from partners n
+- Bottoms aligned for clean length comparisons
+- Units toggle (inches <-> centimeters) with live conversion
+- Presets for common comparisons
+- Snapshot (PNG) with a legend that labels each model's length x girth in both in/cm
+- Grid toggle, Reset View, smooth drag rotate and wheel/pinch zoom
+- Single HTML file using Three.js via CDN (can be vendored locally)
 
 ---
 
 ## Quick Start
 
 ### Open locally
-1. Download/clone this repo.
-2. Open `index.html` in your browser.
-   - If the browser blocks local resources, run a tiny server:
+1) Download or clone this repo.
+2) Open `index.html` in Chrome/Firefox/Edge.
+   - If your browser blocks local modules, run a tiny server:
      ```bash
      python3 -m http.server 8080
-     # Visit http://localhost:8080/
+     # then open http://localhost:8080/
      ```
 
-### Free hosting with GitHub Pages
-1. Repo **Settings → Pages**.
-2. **Source**: *Deploy from a branch*.
-3. **Branch**: `main` • **Folder**: `/ (root)` • **Save**.
-4. Your site: `https://<your-username>.github.io/size-comparator-3d/`
+### Free hosting (GitHub Pages)
+1) Repo Settings -> Pages.
+2) Source: "Deploy from a branch".
+3) Branch: `main`, Folder: `/ (root)`, then Save.
+4) Your site: `https://<your-username>.github.io/size-comparator-3d/`
 
-> Netlify Drop / Vercel / Cloudflare Pages work too (no build step).
+Netlify Drop, Vercel, and Cloudflare Pages also work with no build step.
+
+---
+
+## Statistics and Methods (what the app is doing)
+
+This tool is an illustrative visualizer based on simple, transparent assumptions. It does not predict individuals.
+
+### Population parameters (defaults)
+We use global erect measurements reported by Veale et al. (2015, BJU International):
+- Erect length (cm): mean mu_L = 13.12, SD sigma_L = 1.66
+- Erect circumference / girth (cm): mean mu_G = 11.66, SD sigma_G = 1.10
+
+For context only, an India-specific clinic sample (Promodu et al., 2007; Int J Impot Res, n=93) reported:
+- Erect length ~ 13.01 cm, erect circumference ~ 11.46 cm
+
+These are close to the global means, although sampling, geography, and methods differ.
+
+### Distributional assumption
+Following Veale's nomogram approach, we model erect length and girth separately as approximately normal in the general population. The app treats length and girth as independent when "Both" is selected. This keeps the math and UI simple; it is a useful approximation near the center of the distribution.
+
+### Order statistics (max/min at confidence c)
+Given n partners and a confidence level c in (0,1), the app estimates a size q so that:
+- Max case (B): P(max <= q_max) = c
+- Min case (C): P(min >= q_min) = c
+
+Assuming independent observations from N(mu, sigma^2), the closed-form solutions are:
+```
+q_max = mu + sigma * Phi^{-1}( c^(1/n) )
+q_min = mu + sigma * Phi^{-1}( 1 - (1 - c)^(1/n) )
+```
+where Phi^{-1} is the inverse standard normal CDF.
+
+Implementation detail: the code uses the Acklam approximation for the normal quantile (fast and accurate for UI use).
+
+Mode handling in the UI:
+- "Length only": apply the quantile to length; keep girth equal to A (you)
+- "Girth only": apply the quantile to girth; keep length equal to A (you)
+- "Both": apply the quantiles independently to length and girth (simplifying assumption)
+
+### Caveats
+- Independence is an approximation; a full joint model is out of scope here.
+- Populations, regions, ages, and measurement protocols vary. Newer studies discuss regional differences and possible temporal changes; we keep a fixed baseline so comparisons are interpretable.
+- For small n, order-statistic quantiles can be jumpy; confidence intervals around those quantiles are not shown.
+
+---
+
+## Customizing the model (edit index.html)
+
+Open `index.html` and locate these constants (values are centimeters):
+```js
+// Population parameters (cm)
+const MU_LEN = 13.12, SD_LEN = 1.66;  // erect length
+const MU_GIR = 11.66, SD_GIR = 1.10;  // erect circumference (girth)
+```
+To use the India sample means as a rough baseline:
+```js
+const MU_LEN = 13.01;  // keep SD unless you have robust local SD
+const SD_LEN = 1.66;
+const MU_GIR = 11.46;
+const SD_GIR = 1.10;
+```
+You can also add a UI toggle to switch baselines.
 
 ---
 
 ## Controls
 
-- **Rotate**: click‑drag (or touch‑drag)  
-- **Zoom**: mouse wheel / trackpad pinch / buttons  
-- **Reset view**: *Reset View*  
-- **Grid**: toggle *Show grid*  
-- **Export**: *Snapshot (PNG)* saves an image with labels
-
----
-
-## UI Guide
-
-- **Units**: switch **in ↔︎ cm** (values convert live).
-- **A (you)**: set **Length** & **Girth** → *Save as my size*.  
-  Enable *Lock A* to freeze A while you play with B/C.
-- **Manual B**: enter B’s **Length** & **Girth**.
-- **Partners mode**: tick *Use number of partners…* to compute:
-  - **B = c‑quantile of maximum**, **C = c‑quantile of minimum**
-  - Choose *Both*, *Length only*, or *Girth only*
-  - Set **Partners (n)** and **Confidence (%)**
-- **Presets**: quick buttons for common comparisons.
-
----
-
-## Stats Model (order statistics)
-
-Assuming independent normal distributions:
-
-- **Length (cm)**: μ = **13.12**, σ = **1.66**  
-- **Girth (cm)**:  μ = **11.66**, σ = **1.10**
-
-Let `n` be partners and `c` be confidence in (0,1).
-
-- Quantile of the **maximum** (value `x` with P(max ≤ x) = `c`):
-  ```
-  q_max = μ + σ * Φ⁻¹( c^(1/n) )
-  ```
-- Quantile of the **minimum** (value `x` with P(min ≥ x) = `c`):
-  ```
-  q_min = μ + σ * Φ⁻¹( 1 - (1 - c)^(1/n) )
-  ```
-
-`Φ⁻¹` is the inverse standard normal CDF (Acklam approximation in code).  
-**Note:** *Both* treats length & girth independently.
-
-> These are illustrative population stats; real anatomy varies.
+- Rotate: drag (mouse/touch)
+- Zoom: wheel / pinch / buttons
+- Reset view: "Reset View"
+- Grid: toggle "Show grid"
+- Export: "Snapshot (PNG)" saves a labeled image
 
 ---
 
 ## Privacy
 
-- Everything runs locally in your browser.
-- No analytics; only the Three.js CDN is fetched.
-- “Save as my size” uses `localStorage` keys: `myLenIn`, `myGirIn`.
+- 100% client-side. No analytics.
+- Only external fetch is the Three.js CDN.
+- "Save as my size" uses localStorage keys: `myLenIn`, `myGirIn`.
 
 ---
 
 ## Tech
 
-- **Three.js** (from CDN)
-- Single‑file app: `index.html`
+- Three.js (CDN)
+- Single-file app: `index.html`
 - Canvas export for labeled PNG
+
+If your network blocks CDNs, vendor Three locally by downloading `three.min.js` to the repo root and replacing the script tag:
+```html
+<script src="./three.min.js"></script>
+```
 
 ---
 
 ## Troubleshooting
 
-- **Blank page** → Open DevTools **Console**. If the CDN is blocked, vendor Three.js locally:  
-  download `three.min.js` to repo root and change:
-  ```html
-  <script src="./three.min.js"></script>
-  ```
-- **Pages 404** → Check Settings → Pages uses `main` + `/(root)` and file is `index.html` at repo root. Wait ~1 minute.
-- **Blurry PNG** → Make browser window larger (export uses current canvas size).
+- Blank page: open DevTools Console. If the CDN is blocked, vendor Three locally (see above).
+- GitHub Pages 404: Settings -> Pages must be "Deploy from a branch" with main and /(root). File must be `index.html` at repo root. Wait about a minute after enabling.
+- Blurry PNG: resize the browser window larger before clicking Snapshot (export uses the current canvas size).
+
+---
+
+## References
+
+Veale D. et al. (2015). "Am I normal? A systematic review and construction of nomograms for flaccid and erect penis length and circumference...". BJU International.
+PubMed: https://pubmed.ncbi.nlm.nih.gov/25487360/
+PDF: https://drjromero-otero.com/wp-content/uploads/2018/08/Veale_et_al-2015-BJU_International.pdf
+
+Promodu K. et al. (2007). "Penile length and circumference: an Indian study". International Journal of Impotence Research.
+PubMed: https://pubmed.ncbi.nlm.nih.gov/17568760/
+
+Belladelli F. et al. (2023). "Worldwide Temporal Trends in Penile Length". World Journal of Men's Health.
+PDF: https://wjmh.org/pdf/10.5534/wjmh.220203
+
+Mostafaei H. et al. (2025). "A Systematic Review and Meta-Analysis of Penis Length and Circumference according to WHO Regions". Urology Research & Practice.
+PMC: https://pmc.ncbi.nlm.nih.gov/articles/PMC11923605/
+
+Acklam P. J. "An algorithm for computing the inverse normal cumulative distribution function".
+Overview: https://stackedboxes.org/2017/05/01/acklams-normal-quantile-function/
 
 ---
 
